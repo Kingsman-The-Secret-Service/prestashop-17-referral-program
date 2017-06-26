@@ -36,20 +36,26 @@ class Kk_ReferralProgramReferralModuleFrontController extends ModuleFrontControl
 	
 	public function postProcess(){	
 
+		$pack = [	
+				"BELT" => ["AMT" =>"500","color"=>"success","ACTIVE" =>false],
+				"WALLET" => ["AMT"=>"1000","color"=>"info","ACTIVE"=>true],
+				"SHOE" => ["AMT"=>"10000","color"=>"primary","ACTIVE"=>true]
+				];
+
+		Configuration::updateValue("KK_REFERRAL_BONUS_PACK", json_encode($pack));
 		// Configuration::updateValue("KK_REFERRAL_VALID_PERIOD", "+3 Months");
 		// Configuration::updateValue("KK_REFERRAL_MIN_MONEY",200);
 		// Configuration::updateValue("KK_REFERRAL_QUANTITY",99);
 		// Configuration::updateValue("KK_REFERRAL_EACH_USER",1);
 		// Configuration::updateValue("KK_REFERRAL_REDUCTION_PERCENTAGE",10.0);
 		// Configuration::updateValue("KK_REFERRAL_FREE_SHIPPING",true);
-		Configuration::updateValue("KK_REFERRAL_HIGHLIGHT",false);
+		// Configuration::updateValue("KK_REFERRAL_HIGHLIGHT",false);
 		// Configuration::updateValue("KK_REFERRAL_REDUCTION_EXCLUDE_SPECIAL",true);
 		// Configuration::updateValue("KK_REFERRAL_GROUP_RESTRICTION_IDS", implode(',',[1,2,3]));
 		// Configuration::updateValue("KK_REFERRAL_CHANGE_CUSTOMER_GROUP", implode(',',[4]));
 
 		$tempVars = [];
 
-		
 		$cartRuleId = CartRule::getIdByCode($this->generateCouponCode());
 		$cartRule = new CartRule($cartRuleId);
 
@@ -58,10 +64,11 @@ class Kk_ReferralProgramReferralModuleFrontController extends ModuleFrontControl
     		$this->generateCartRule();
     	}
 
-    	$this->debug($this->getOrdersList($cartRuleId));
-
+    	$tempVars = $this->getOrdersList($cartRuleId)[0];
 		$tempVars['code'] = $this->generateCouponCode();
+		$tempVars['packs'] = json_decode(Configuration::get('KK_REFERRAL_BONUS_PACK'),true);
 
+		// $this->debug($tempVars);
     	$this->context->smarty->assign($tempVars);
     }
 
@@ -141,25 +148,13 @@ class Kk_ReferralProgramReferralModuleFrontController extends ModuleFrontControl
 
     protected function getOrdersList($cartRuleId){
 
+    	$query = 'SELECT count(*) as count, SUM(`total_paid`) as amount FROM `ps_order_cart_rule` ocr
+			LEFT JOIN `ps_orders` o ON ocr.`id_order` = o.`id_order`
+			WHERE ocr.`id_cart_rule` = '.(int)$cartRuleId;
 
-    	$orders = Db::getInstance()->executeS('
-			SELECT *
-			FROM `'._DB_PREFIX_.'order_cart_rule` ocr
-			LEFT JOIN `'._DB_PREFIX_.'orders` o ON ocr.`id_order` = o.`id_order`
-			AND ocr.`id_cart_rule` = '.(int)$cartRuleId
-			);
+    	$orders = Db::getInstance()->executeS($query);
 
-    	$this->debug('
-			SELECT *
-			FROM `'._DB_PREFIX_.'order_cart_rule` ocr
-			LEFT JOIN `'._DB_PREFIX_.'orders` o ON ocr.`id_order` = o.`id_order`
-			AND ocr.`id_cart_rule` = '.(int)$cartRuleId);
-
-    	return Db::getInstance()->executeS('
-			SELECT DISTINCT id_cart_rule
-			FROM `'._DB_PREFIX_.'order_cart_rule` ocr
-			LEFT JOIN `'._DB_PREFIX_.'orders` o ON ocr.`id_order` = o.`id_order`
-			AND o.`id_customer` = '.(int)$id_customer);
+    	return $orders;
     }
 
     public function debug($debug){
