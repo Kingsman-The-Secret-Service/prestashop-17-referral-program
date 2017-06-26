@@ -54,8 +54,8 @@ class Kk_ReferralProgram extends Module
     public function install()
     {
         return parent::install()
-            && $this->registerHook('displayMyAccountBlock')
-            && $this->registerHook('displayCustomerAccount');
+            &&  $this->registerHook('displayMyAccountBlock')
+            &&  $this->registerHook('displayCustomerAccount');
     }
 
     public function uninstall()
@@ -190,12 +190,16 @@ class Kk_ReferralProgram extends Module
 
     public function hookDisplayMyAccountBlock($param){
 
-        return $this->fetch('module:/views/templates/front/referrallinks.tpl');
+          $this->smarty->assign('referralUrl',  $this->context->link->getModuleLink('kk_referralprogram', 'referral', [], true));
+
+        return $this->fetch('module:kk_referralprogram/views/templates/front/referrallinks.tpl');
     }
 
     public function hookDisplayCustomerAccount($param){
 
-        return $this->fetch('module:/views/templates/front/referralblocks.tpl');
+          $this->smarty->assign('referralUrl',  $this->context->link->getModuleLink('kk_referralprogram', 'referral', [], true));
+
+        return $this->fetch('module:kk_referralprogram/views/templates/front/referralblocks.tpl');
     }
     
 }
